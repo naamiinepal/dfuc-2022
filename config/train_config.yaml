@@ -1,0 +1,34 @@
+base_dir_path:
+        base_dir: ""
+
+data_dir_path:
+        train_img_dir: ""
+        train_msk_dir: ""
+        val_img_dir: ""
+        val_msk_dir: ""
+
+training_params:
+        train_batch_size: 
+        val_batch_size: 
+        learning_rate: 
+        num_classes: 
+        val_interval: 
+        eval_metric: ""
+        grad_accumulation_interval : 
+        min_epoch: 
+        max_epoch: 
+        device_type: ""
+        loss_function: ""
+        optim: ""
+
+model_params:
+        model_name: ""
+        model_backbone_network: ""
+        model_last_checkpoint_path: ""
+        use_last_checkpoint:
+        model_save_dir: "checkpoints/"
+
+logs_params:
+        tensorboard_logs_params:
+                tb_log_dir: "logs/tensorboard/"
+

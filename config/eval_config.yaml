@@ -1,0 +1,12 @@
+eval_name: ""
+model_name: ""
+model_backbone_network: ""
+model_checkpoint_path: ""
+output_base_dir: ""
+eval_type: 
+eval_data_dir_0: ""
+eval_data_base_dir_1: ""
+images_path: "" 
+masks_path: ""
+eval_batch_size: 
+
