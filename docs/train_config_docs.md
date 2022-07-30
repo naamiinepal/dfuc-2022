@@ -15,7 +15,7 @@ Parameter | Description
 `min_epoch` | Minimum number of epoch to run training
 `max_epoch` | Maximum number of epoch to run training
 `device_type` | Type of device to use for training(`cpu` or `gpu`)
-`loss_function` | Loss function to use for training(available options -> [`dice_loss`, `focal_loss`, `gen_dice_focal_loss`])
+`loss_function` | Loss function to use for training(available options -> [`dice_loss`, `focal_loss`, `dice_focal_loss`, `gen_dice_focal_loss`, `tversky_loss`])
 `optim` | Optimizer to use for training(available options -> [`adam`])
 `model_name` | Name of model to use for training(available options -> [`deeplabv3`, `unet`, `att_unet`, `unetr`])
 `model_backbone_network` | Backbone network to use for model during training(for `deeplabv3` model, available options -> [`resnet50`, `resnet101`, `resnet101p`], for other models available options -> [])
