@@ -6,7 +6,7 @@ import yaml
 from PIL import Image
 from monai.data import decollate_batch
 from monai.inferers import sliding_window_inference
-from monai.metrics import DiceMetric
+from monai.metrics import DiceMetric, get_confusion_matrix, compute_confusion_matrix_metric
 from transforms import val_imtrans_d, post_trans, val_trans_d_no_gt
 from load_models import load_model
 from data_loader import data_loader_d
@@ -43,6 +43,11 @@ def main():
         os.mkdir(op_dir)
 
     eval_images = []
+
+    false_positive_error = 0
+    false_negative_error = 0
+    precision_metric = 0
+    recall_metric = 0
 
     if eval_type == 0:
         eval_images = sorted(glob(os.path.join(eval_data_dir_0, "*.jpg")))
@@ -86,11 +91,15 @@ def main():
 
             if eval_type == 1:
                 dice_score = dice_metric(y_pred=eval_outputs, y=eval_masks)
+                false_positive_error = compute_confusion_matrix_metric("fpr", get_confusion_matrix(torch.Tensor(eval_outputs[0]).reshape(1, 1, 640, 480), torch.Tensor(eval_masks)))
+                false_negative_error = compute_confusion_matrix_metric("fnr", get_confusion_matrix(torch.Tensor(eval_outputs[0]).reshape(1, 1, 640, 480), torch.Tensor(eval_masks)))
+                precision_metric = compute_confusion_matrix_metric("precision", get_confusion_matrix(torch.Tensor(eval_outputs[0]).reshape(1, 1, 640, 480), torch.Tensor(eval_masks)))
+                recall_metric = compute_confusion_matrix_metric("recall", get_confusion_matrix(torch.Tensor(eval_outputs[0]).reshape(1, 1, 640, 480), torch.Tensor(eval_masks)))
 
             for eval_output in eval_outputs:
-                Image.fromarray(eval_output[0].cpu().detach().numpy().astype("uint8") * 255).transpose(Image.Transpose.TRANSPOSE).save(os.path.join(op_dir,fname_mapping_list[idx].split(".")[0]+".png"))
+                Image.fromarray(eval_output[0].cpu().detach().numpy().astype("uint8") * 255).transpose(Image.Transpose.TRANSPOSE).save(os.path.join(op_dir,fname_mapping_list[idx].split(".")[0] + ".png"))
                 if eval_type == 1:
-                    list_for_csv.append([fname_mapping_list[idx].split(".")[0] + ".png", dice_score])
+                    list_for_csv.append([fname_mapping_list[idx].split(".")[0] + ".png", dice_score, false_positive_error, false_negative_error, precision_metric, recall_metric])
                 idx = idx + 1
 
         # aggregate the final mean dice result
