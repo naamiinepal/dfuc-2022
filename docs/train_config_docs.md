@@ -23,6 +23,14 @@ Parameter | Description
 `use_last_checkpoint` | Set to use some checkpoint(`0` or `1`)
 `model_save_dir` | Path to save model checkpoints
 `tb_log_dir` | Path to save tensorboard logs
+`remarks` | Additional information to append to name training identifiers
+---
+**Additional parameters for training using k folds**
+---
+Parameter | Description
+--- | ---
+`num_fold` | Number of fold to divide the training dataset into
+`k_fold_n` | takes value from 1 to `num_fold` to choose the fold to train
 ---
 **Note: Make sure that you choose only one value for parameters for which available options are given as lists with one or more elements.**
 

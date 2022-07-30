@@ -20,12 +20,14 @@ training_params:
         device_type: ""
         loss_function: ""
         optim: ""
-
+        num_fold: 
+        k_fold_n: 
+        
 model_params:
         model_name: ""
         model_backbone_network: ""
         model_last_checkpoint_path: ""
-        use_last_checkpoint:
+        use_last_checkpoint: 
         model_save_dir: "checkpoints/"
 
 logs_params:

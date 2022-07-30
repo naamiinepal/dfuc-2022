@@ -22,7 +22,8 @@ from transforms import (
     )
 
 from data_loader import (
-    data_loader_d
+    data_loader_d,
+    data_loader_d_k_fold
     )
 
 from load_models import load_model
@@ -31,7 +32,7 @@ from metrics import get_metric
 from optimizers import get_optimizer
 
 #load configs
-with open('./config/train_config.yaml', 'r') as config_file:
+with open('./config/train_config_k_fold.yaml', 'r') as config_file:
     config_params = yaml.safe_load(config_file)
     model_config = json.dumps(config_params)
 
@@ -56,8 +57,10 @@ def main():
     val_interval = config_params["training_params"]["val_interval"]
     grad_accumulation_interval = config_params["training_params"]["grad_accumulation_interval"]
     min_epoch = config_params["training_params"]["min_epoch"]
-    max_epoch = config_params["training_params"]["max_epoch"]
+    max_epoch = config_params["training_params"]["max_epoch"] 
     device_type = config_params["training_params"]["device_type"]
+    k_fold_n = config_params["training_params"]["k_fold_n"]
+    num_fold = config_params["training_params"]["num_fold"]
     tensorboard_log_dir = config_params["logs_params"]["tensorboard_logs_params"]["tb_log_dir"]
     model_save_dir = config_params["model_params"]["model_save_dir"]
     model_name = config_params["model_params"]["model_name"]
@@ -65,10 +68,10 @@ def main():
     last_checkpoint = config_params["model_params"]["model_last_checkpoint_path"]
     use_last_checkpoint = config_params["model_params"]["use_last_checkpoint"]
     remarks = config_params["remarks"]
-
+     
     checkds = monai.utils.misc.first(data_loader_d(train_trans_d_aug(), train_batch_size, os.path.join(base_dir, train_img_dir), os.path.join(base_dir, train_msk_dir)))
 
-    training_name = str(model_name) + "_" + str(model_backbone_network) + "_" + str(loss_function_name) + "_" + str(optim_name) + "_" + str(learning_rate) + "_" + str(train_batch_size * grad_accumulation_interval) + "_" + str(remarks) + str(datetime.now()).replace(' ', '-')
+    training_name = str(model_name) + "_" + str(model_backbone_network) + "_" + str(loss_function_name) + "_" + str(optim_name) + "_" + str(learning_rate) + "_" + str(train_batch_size * grad_accumulation_interval) + "_" + str(remarks) + "_" + "fold" + "_" + str(k_fold_n) + "_" + str(datetime.now()).replace(' ', '-')
 
     if not os.path.exists(base_dir + model_save_dir + training_name):
             os.mkdir(base_dir + model_save_dir + training_name )
@@ -78,10 +81,10 @@ def main():
 
     #set device
     if device_type == "gpu":
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu") 
     else:
         device = torch.device("cpu")
-
+    
     if device == torch.device("cuda"):
         print("Training running in device: " + torch.cuda.get_device_name())
     elif device == torch.device("cpu"):
@@ -93,7 +96,6 @@ def main():
     model, source = load_model(model_name, model_backbone_network, device)
 
     #training parameters
-
     loss_function = get_loss_function(loss_function_name)
     optimizer = get_optimizer(optim_name, model, float(learning_rate))
     eval_metric = get_metric(eval_metric_name)
@@ -118,9 +120,18 @@ def main():
         model.load_state_dict(checkpoint["model_state"])
         optimizer.load_state_dict(checkpoint["optim_state"])
 
-    train_loader= data_loader_d(train_trans_d_aug(), train_batch_size, os.path.join(base_dir, train_img_dir), os.path.join(base_dir, train_msk_dir))
-    val_loader= data_loader_d(val_trans_d_aug(), val_batch_size, os.path.join(base_dir, val_img_dir), os.path.join(base_dir, val_msk_dir))
+    image_fname = []
+    mask_fname = []
 
+    with open ("k_fold_utils/k_fold-splits.csv", "r") as infile:
+        for image in infile:
+            image_fname = image.split(",")[:-1]
+    for image in image_fname:
+        mask_fname.append((image.replace("image", "mask")).replace("jpg", "png"))
+
+    train_loader = data_loader_d_k_fold(train_trans_d_aug(), train_batch_size, image_fname[:((k_fold_n - 1) * len(image_fname) // num_fold)] + image_fname[(k_fold_n * len(image_fname) // num_fold):], mask_fname[:((k_fold_n - 1) * len(image_fname) // num_fold)] + mask_fname[(k_fold_n * len(image_fname) // num_fold):])
+    val_loader = data_loader_d_k_fold(val_trans_d_aug(), val_batch_size, image_fname[(k_fold_n - 1) * len(image_fname) // num_fold:(k_fold_n * len(image_fname) // num_fold)], mask_fname[(k_fold_n - 1) * len(image_fname) // num_fold:(k_fold_n * len(image_fname) // num_fold)])
+    
     y_threshold = Variable(torch.Tensor([0.5]).to(device))
 
     #training loop
@@ -160,7 +171,7 @@ def main():
         epoch_loss_values.append(epoch_loss)
 
         writer.add_scalar("train_loss_per_epoch", epoch_loss, epoch + 1)
-
+        
         training_metric = eval_metric.aggregate().item()
         eval_metric.reset()
 
@@ -175,8 +186,8 @@ def main():
                 for val_data in val_loader:
                     val_images, val_masks = val_data["img"].to(device), val_data["msk"].to(device)
                     if source == "monai":
-                        roi_size=(480, 480)
-                        sw_batch_size=2
+                        roi_size = (480, 480)
+                        sw_batch_size = 2
                         val_outputs = sliding_window_inference(val_images, roi_size, sw_batch_size, model)
                         val_outputs = [post_trans
                         ()(i) for i in decollate_batch(val_outputs)]
@@ -197,7 +208,7 @@ def main():
                 # reset the status for next validation round
                 eval_metric.reset()
                 metric_values.append(metric)
-
+                
                 # check_metric sees if the new validation score is greater than any of the best n scores
                 check_metric = np.multiply(metric > np.array(best_n_metric), 1)
 
@@ -218,7 +229,7 @@ def main():
 
                                 if os.path.exists(base_dir + model_save_dir + training_name + "/" + training_name + "_best_" +str(curr_idx - 2) + ".pth"):
                                     os.rename(base_dir + model_save_dir + training_name + "/" + training_name + "_best_" + str(curr_idx - 2) + ".pth", base_dir + model_save_dir + training_name + "/" + training_name + "best" + str(curr_idx - 1) + ".pth")
-
+                                
                             best_n_metric[best_val_idx] = metric
                             best_n_metric_epoch[best_val_idx] = epoch + 1
                             best_metric = best_n_metric[0]
@@ -245,8 +256,8 @@ def main():
                 )
                 writer.add_scalar("val_mean_dice", metric, epoch + 1)
                 writer.add_scalar("best_val_mean_dice_epoch", best_metric, epoch + 1)
-                writer.add_scalar("best_val_mean_dice_epoch", best_metric_epoch, epoch + 1)
-
+                writer.add_scalar("best_val_mean_dice_epoch", best_metric_epoch, epoch + 1) 
+                
             epoch += 1
 
     print(f"train completed, best_metric: {best_metric:.4f} at epoch: {best_metric_epoch}")
@@ -254,4 +265,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
