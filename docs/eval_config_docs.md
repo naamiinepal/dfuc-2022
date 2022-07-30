@@ -12,5 +12,12 @@ Parameter | Description
 `masks_path` | If `eval_type=1`, path of segmentations data to use for evaluation relative to `eval_data_base_dir`
 `eval_batch_size` | Batch size during evaluation
 ---
+**Additional parameters for evaluation of models trained using k folds**
+---
+Parameter | Description
+--- | ---
+`num_fold` | Number of folds the training dataset was divided into
+`k_fold_n` | takes value from 1 to `num_fold` to choose the fold to evaluate on
+---
 **Note: Make sure that you choose only one value for parameters for which available options are given as lists with one or more elements.**
 

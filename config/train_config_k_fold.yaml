@@ -20,17 +20,24 @@ training_params:
         device_type: ""
         loss_function: ""
         optim: ""
+        num_fold: 
+        k_fold_n: 
+        
 
 model_params:
         model_name: ""
         model_backbone_network: ""
         model_last_checkpoint_path: ""
-        use_last_checkpoint:
-        model_save_dir: "checkpoints/"
+        use_last_checkpoint: 
+        model_save_dir: ""
 
-logs_params:
+logs_params: 
         tensorboard_logs_params:
-                tb_log_dir: "logs/tensorboard/"
+                tb_log_name: ""
+                tb_log_dir: ""
 
 remarks: ""
+
+
+
 

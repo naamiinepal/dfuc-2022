@@ -8,5 +8,7 @@ eval_data_dir_0: ""
 eval_data_base_dir_1: ""
 images_path: "" 
 masks_path: ""
-eval_batch_size: 
+eval_batch_size:
+num_fold:
+k_fold_n: 
 

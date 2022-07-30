@@ -44,6 +44,12 @@ For training, update the `train_config` file and run the command for training. P
 python train.py
 ```
 
+For training separate models by making diffrent folds of the training dataset, randomly shuffle the dataset and add the shuffled list to `k_fold_utils/k_fold-splits.csv`(this csv file needs to be created), then update the `train_config_k_fold` file and run the command for training. Parameters in the `train_config_k_fold` file can be updated by refering the documentation of training config at `docs/train_config_docs.md`.
+
+```python
+python train_k_fold.py
+```
+
 Training logs can be visualized using `tensorboard`. It can be run using following command:
 
 ```
@@ -58,6 +64,12 @@ For evaluation, update the `eval_config` file and run the command for evaluation
 
 ```python
 python eval.py
+```
+
+For evaluation of models trained by making k folds of the training dataset, update the `eval_config_k_fold` file and run the command for evaluation. Parameters in the `eval_config_k_fold` file can be updated by refering the documentation of evaluation config at `docs/eval_config_docs.md`.
+
+```python
+python eval_k_fold.py
 ```
 
 ## **License**
