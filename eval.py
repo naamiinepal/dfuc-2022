@@ -3,6 +3,7 @@ from glob import glob
 import csv
 import torch
 import yaml
+import scipy
 from PIL import Image
 from monai.data import decollate_batch
 from monai.inferers import sliding_window_inference
@@ -10,7 +11,6 @@ from monai.metrics import DiceMetric, get_confusion_matrix, compute_confusion_ma
 from transforms import val_imtrans_d, post_trans, val_trans_d_no_gt
 from load_models import load_model
 from data_loader import data_loader_d
-
 
 with open('./config/eval_config.yaml', 'r') as config_file:
     eval_config_params = yaml.safe_load(config_file)
@@ -97,7 +97,8 @@ def main():
                 recall_metric = compute_confusion_matrix_metric("recall", get_confusion_matrix(torch.Tensor(eval_outputs[0]).reshape(1, 1, 640, 480), torch.Tensor(eval_masks)))
 
             for eval_output in eval_outputs:
-                Image.fromarray(eval_output[0].cpu().detach().numpy().astype("uint8") * 255).transpose(Image.Transpose.TRANSPOSE).save(os.path.join(op_dir,fname_mapping_list[idx].split(".")[0] + ".png"))
+                eval_op = scipy.ndimage.binary_fill_holes(eval_output[0].cpu().detach().numpy()).astype("uint8")
+                Image.fromarray(eval_op.astype("uint8") * 255).transpose(Image.Transpose.TRANSPOSE).save(os.path.join(op_dir,fname_mapping_list[idx].split(".")[0]+".png"))
                 if eval_type == 1:
                     list_for_csv.append([fname_mapping_list[idx].split(".")[0] + ".png", dice_score, false_positive_error, false_negative_error, precision_metric, recall_metric])
                 idx = idx + 1
